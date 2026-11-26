@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="googlebot" content="noindex, nofollow">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="첫방노트">
+<meta name="theme-color" content="#0e7a4a">
+<title>첫방노트 원고 보관함</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="top-inner">
+    <div class="brand">
+      <span class="logo" aria-hidden="true">첫</span>
+      <div class="brand-text">
+        <h1>첫방노트 원고 보관함</h1>
+        <p id="stats">불러오는 중…</p>
+      </div>
+    </div>
+    <div class="progress">
+      <span id="progressText">발행 0/0</span>
+      <div class="bar" aria-hidden="true"><i id="progressBar"></i></div>
+    </div>
+  </div>
+  <nav class="tabs" id="tabs" aria-label="날짜 선택"></nav>
+</header>
+
+<main id="list" aria-live="polite"></main>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="banner" id="banner" hidden></div>
+
+<footer class="foot">
+  <p>원고 발행은 직접 하시고, 올린 글은 카드의 <b>발행 완료</b>로 체크해 두세요. (이 기기에만 저장됩니다)</p>
+  <p class="muted">사진은 <b>저장</b> 버튼으로 받아 네이버 에디터에 올리면 됩니다. 본문 복사는 서식이 유지된 채 붙여넣어집니다.</p>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
