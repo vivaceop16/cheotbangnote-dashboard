@@ -5,7 +5,7 @@
 
   var DONE_KEY = 'cheotbangnote.done.v1';
   var FALLBACK_START = '2026-11-19';
-  var state = { days: [], active: '', done: {}, collapsed: {} };
+  var state = { days: [], active: '', done: {}, open: {} };
 
   /* ── 유틸 ─────────────────────────── */
   function $(sel, root) { return (root || document).querySelector(sel); }
@@ -132,18 +132,28 @@
       return { file: im.file, src: im.src, cap: im.cap || '', label: im.label || ('사진 ' + (i + 1)) };
     });
   }
+  var FONT = "font-family:'NanumSquare','나눔스퀘어',sans-serif;";
+  function d(text, size, color, bold) {
+    return '<div style="' + FONT + 'font-size:' + (size || 15) + 'px;line-height:' + (size === 17 ? 1.9 : 1.95) +
+      ';color:' + (color || '#222') + ';">' + (bold ? '<b>' + text + '</b>' : text) + '</div>';
+  }
+  function gap() { return '<div><br></div>'; }
+
   function bodyHTML(post) {
     var h = [];
     if (post.meta && post.meta.length) {
-      h.push('<blockquote>');
+      h.push('<div style="' + FONT + 'font-size:15px;line-height:1.95;color:#222;border-left:4px solid #0e8f74;padding:10px 14px;background:#f4faf8">');
       post.meta.forEach(function (m) {
-        h.push(m.k ? '<p><b>' + esc(m.k) + '</b> ' + esc(m.v) + '</p>' : '<p>' + esc(m.v) + '</p>');
+        h.push(m.k ? '<div><b>' + esc(m.k) + '</b>: ' + esc(m.v) + '</div>' : '<div>' + esc(m.v) + '</div>');
       });
-      h.push('</blockquote>');
+      h.push('</div>');
+      h.push(gap());
     }
-    (post.hook || []).forEach(function (line) { h.push('<p>' + esc(line) + '</p>'); });
+    (post.hook || []).forEach(function (line) { h.push(d(esc(line), 15, '#222', true)); });
+    h.push(gap());
     (post.sections || []).forEach(function (sec) {
-      if (sec.heading) h.push('<h3><b>' + esc(sec.heading) + '</b></h3>');
+      h.push(gap());
+      if (sec.heading) { h.push(d(esc(sec.heading), 17, '#222', true)); h.push(gap()); }
       (sec.blocks || []).forEach(function (b) {
         if (b.t === 'img') {
           var label = b.label || '';
@@ -151,13 +161,14 @@
             var idx = (post.images || []).findIndex(function (im) { return im.file === b.file; });
             label = '사진 ' + (idx >= 0 ? idx + 1 : '');
           }
-          h.push('<p style="color:#999999;font-size:12px">[' + esc(label) + '] ' + esc(b.cap || '') + '</p>');
+          h.push(d('[' + esc(label) + '] ' + esc(b.cap || ''), 15, '#0e8f74'));
         } else {
-          h.push('<p>' + esc(b.text) + '</p>');
+          h.push(d(esc(b.text)));
         }
+        h.push(gap());
       });
     });
-    if (post.cta) h.push('<p>' + esc(post.cta) + '</p>');
+    if (post.cta) h.push(d(esc(post.cta), 15, '#222', true));
     return h.join('');
   }
   function bodyText(post) {
@@ -212,7 +223,8 @@
 
   function cardHTML(post, dateIso) {
     var done = !!state.done[post.id];
-    var collapsed = state.collapsed[post.id] === true;
+    // '전체' 보기에서는 접힌 채로 시작(목록처럼), 한 날짜 안에서는 펼쳐서 시작
+    var collapsed = post.id in state.open ? !state.open[post.id] : state.active === '';
     var photos = photosOf(post);
     var metaKV = (post.meta || []).map(function (m) {
       return m.k ? '<dt>' + esc(m.k) + '</dt><dd>' + esc(m.v) + '</dd>' : '<dt></dt><dd>' + esc(m.v) + '</dd>';
@@ -250,11 +262,14 @@
         '<a class="btn tiny save" href="' + esc(post.thumb.src) + '" download="' + esc(post.date + '_' + post.no + '_thumb.jpg') + '">썸네일 저장</a></div></div>'
       : '';
 
+    var sub = post.headline || '';
+    if (post.title && sub.indexOf(post.title) === 0) sub = sub.slice(post.title.length).trim();
+
     return '<article class="card' + (done ? ' done' : '') + (collapsed ? ' collapsed' : '') + '" data-post="' + esc(post.id) + '" data-date="' + esc(dateIso) + '">' +
       '<div class="card-head" data-act="toggle">' +
         '<span class="badge">' + post.no + '편</span>' +
         '<div class="head-main"><h2>' + esc(post.title) + '</h2>' +
-          (post.headline && post.headline !== post.title ? '<p class="head-sub">' + esc(post.headline) + '</p>' : '') + '</div>' +
+          (sub ? '<p class="head-sub">' + esc(sub) + '</p>' : '') + '</div>' +
         '<button class="check' + (done ? ' on' : '') + '" data-act="done" data-id="' + esc(post.id) + '" aria-pressed="' + done + '">✓<span>발행 완료</span></button>' +
         '<span class="chev">▼</span>' +
       '</div>' +
@@ -323,7 +338,7 @@
       if (!card) return;
       if (ev.target.closest('[data-act="done"]')) return;
       card.classList.toggle('collapsed');
-      state.collapsed[card.getAttribute('data-post')] = card.classList.contains('collapsed');
+      state.open[card.getAttribute('data-post')] = !card.classList.contains('collapsed');
       return;
     }
     if (act === 'done') {
